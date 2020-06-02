@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>贝塞尔演示</title>
+    <script src="../js库/jquery.min.js"></script>
+    <script src="BezierCurve.js"></script>
+    <script src="../js库/vue.js"></script>
+</head>
+<style>
+body{
+    display: flex;
+    align-items: flex-start;
+    height: 100vh;
+    justify-content: center;
+    font-size: 14px;;
+    color: #555;
+    padding: 0px 20px;
+    padding-top: 100px;
+    overflow-y: auto;
+    margin: 0;
+};
+
+</style>
+<body>
+    <main id='main'>
+        <div class="ball-container" style='display: flex;justify-content: center;'>
+            <div class="ball-move-bg"></div>
+            <div class="ball"></div>
+        </div>
+        <button @click='drawAnimation()' style='margin:0px auto 20px auto;display: block;'>绘制</button>
+        <bezier-viewer v-for='(obj,index) in dotsSet' 
+            :dots = 'obj.dots'
+            :title = 'obj.title'
+        >
+        </bezier-viewer>   
+    </main>
+
+</body>
+<style>
+svg{
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: visible;
+}
+path{
+    stroke-width:1px;
+    fill:transparent;
+}
+.dot-circle{
+    cursor: grab;
+}
+circle{
+    fill: gray;
+}
+.dot-path{
+    stroke:gray;
+}
+.curve-path{
+    stroke: red;
+}
+.dot-g{
+    cursor: grab;
+}
+.ball-container{
+    display: flex;
+    justify-content: center;
+    height: 20px;
+    align-items: center;
+    width: 500px;
+    margin: 0px auto;
+    margin-bottom: 10px;
+    position: relative;
+    flex-wrap: wrap;
+}
+.ball-move-bg{
+    height: 2px;
+    background: #ccc;
+    width: 100%;
+}
+.ball{
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: red;
+    left: 0px;
+    top: 0px;
+    border-radius: 100%;
+}
+input{
+    width: 4em;
+    box-shadow: none;
+    border: 1px solid #ccc;
+}
+input:focus{
+    outline: none;
+    border-color: #00BCD4;
+}
+li{
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+</style>
+
+<script type="text/x-template" id='bezier-curve-template'>
+
+    <div style='display:inline-flex;justify-content:center;align-items:flex-start'>
+        <svg :width=' boxWidth + "px" ' :height=' boxWidth + "px" ' :viewBox=" '0 0 ' + boxWidth + ' ' + boxWidth ">
+            <text x='6px' y='20px'>{{title}}</text>
+            <!-- 连接dots的path -->
+            <path class='dot-path' :d="linePath" ></path>
+            <path class='curve-path' :d="curvePath"></path>
+            <circle :transform="new Matrix(1,0,0,1,startX,startY).toString()" r='5'  class='dot-circle index-circle'  style='fill:red'></circle>
+            <circle :transform="new Matrix(1,0,0,1,endX,endY).toString()" r='5'  class='dot-circle index-circle'  style='fill:red'></circle>
+            <g  v-for='(dot,index) in dots' :transform="new Matrix(1,0,0,1,dot.x,dot.y).toString()" :data-index="index"  class='dot-g'>
+                <circle r='5' class='dot-circle'></circle>
+                <path class='dot-line'></path>
+            </g>
+        </svg>
+        <div style='margin:0px 10px;display:flex;justify-content:center;align-items:flex-start;flex-wrap:wrap;padding:10px'>
+            <ul style='width:100%;cursor:default'>
+                <li>
+                    起点 : 
+                    <input type="number" :value='startX' @blur='changeIndexCircle($event,0)' @keyup.enter='changeIndexCircle($event,0)'> 
+                    , 
+                    <input type="number" :value='startY' @blur='changeIndexCircle($event,1)' @keyup.enter='changeIndexCircle($event,1)'>
+                </li>
+                <li>
+                    终点 : 
+                    <input type="number" :value='endX' @blur='changeIndexCircle($event,2)' @keyup.enter='changeIndexCircle($event,2)'> 
+                    , 
+                    <input type="number" :value='endY' @blur='changeIndexCircle($event,3)' @keyup.enter='changeIndexCircle($event,3)'>
+                </li>
+                <li v-for='(dot,index) in dots'>
+                    {{index}} : 
+                    <input type="number" v-model.number='dot.x'> 
+                    <input type="number" v-model.number='dot.y'>
+                     <!-- {{dot.x}} , {{dot.y}} -->
+                    <button @click='deleteDot(index)'>×</button>
+                </li>
+            </ul>
+            <button @click='addDot()' style='width:70%'>添加一个控制点</button>
+        </div>
+    </div>
+    
+</script>
+<script>
+    (function(){
+        initPint();
+    })();
+</script>
+</html>
