@@ -98,13 +98,18 @@ button{
     border-radius: 5px;
     color: inherit;;
 }
+.close-button{
+    position: absolute;
+    top: 0;
+    right: -10px;
+}
 button:active{
     box-shadow: 0px 5px 5px 2px rgba(0, 0, 0, 0.29) inset;
 }
 #add-btn{
     width: 3em;
     height: 3em;
-    margin-top: 150px;;
+    margin-top: 120px;;
     border-radius: 100% !important;
 }
 
@@ -126,8 +131,11 @@ button:active{
 .ball-container.transform-3d{
     transform: perspective(500px) rotateX(45deg);
 }
+.ball-container.transform-3d .ball{
+    transform: perspective(500px) rotateX(45deg) ;;
+}
 .ball-container .ball{
-    transform: perspective(500px);;
+    transform: perspective(500px)  ;;
 }
 .ball-container.transform-3d::before{
     opacity: 1;

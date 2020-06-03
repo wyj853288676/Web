@@ -40,11 +40,17 @@ body{
         </div>
  
         <div id='curve-container'>
-            <bezier-viewer v-for='(obj,index) in dotsSet' v-if='obj.show == true'
-                :dots = 'obj.dots'
-                :title = 'obj.title'
-            >
-            </bezier-viewer>   
+            <div style='position: relative;'  v-for='(obj,index) in dotsSet' v-if='obj.show == true'>
+                <bezier-viewer
+                    :dots = 'obj.dots'
+                    :title = 'obj.title'
+                >
+                </bezier-viewer>   
+                <button v-show=' curveEditorNumber == (index + 1)' class='circle-button close-button' style='font-size:16px' @click='dotsSet[index].show = false'>
+                    ×
+                </button>
+            </div>
+         
             <button v-show='curveEditorNumber < dotsSet.length ' id='add-btn' @click='addCurveEditor()'>+</button>
         </div>
   
@@ -76,6 +82,7 @@ body{
             </g>
         </svg>
         <div style='margin:0px 10px;display:flex;justify-content:center;align-items:flex-start;flex-wrap:wrap;padding:10px'>
+            <button @click='addDot()' style='width:70%'>添加一个控制点</button>
             <ul style='width:100%;cursor:default'>
                 <li>
                     起点 : 
@@ -97,7 +104,6 @@ body{
                     <button @click='deleteDot(index)'>×</button>
                 </li>
             </ul>
-            <button @click='addDot()' style='width:70%'>添加一个控制点</button>
         </div>
     </div>
     
