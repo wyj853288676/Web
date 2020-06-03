@@ -217,13 +217,16 @@ function initPint(){
                 dots:[],
                 show:true,
                 title:'X方向',
-                options:{},
+                options:{
+                },
             },
             {
                 dots:[],
                 show:false,
                 title:'Y方向',
-                options:{},
+                options:{
+
+                },
             },
             {
                 dots:[],
