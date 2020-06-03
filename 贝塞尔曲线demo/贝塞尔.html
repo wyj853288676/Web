@@ -4,9 +4,11 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>贝塞尔演示</title>
+    <link rel="stylesheet" href="BezierCurve.css">
     <script src="../js库/jquery.min.js"></script>
-    <script src="BezierCurve.js"></script>
+    <script src="../js库/common.js"></script>
     <script src="../js库/vue.js"></script>
+    <script src="BezierCurve.js"></script>
 </head>
 <style>
 body{
@@ -28,94 +30,49 @@ body{
         <div class="ball-container" style='display: flex;justify-content: center;'>
             <div class="ball-move-bg"></div>
             <div class="ball"></div>
+            <div class="ball-shadow" v-show='showTrack'></div>
         </div>
-        <button @click='drawAnimation()' style='margin:0px auto 20px auto;display: block;'>绘制</button>
-        <bezier-viewer v-for='(obj,index) in dotsSet' 
-            :dots = 'obj.dots'
-            :title = 'obj.title'
-        >
-        </bezier-viewer>   
+        <div style='margin-bottom:20px;display: flex;justify-content: center;align-items: center;'>
+            <button @click='drawAnimation()'>绘制</button>
+            <label for="show-track" style="margin:0px 5px">
+                显示轨迹<input type="checkbox" id='show-track' v-model='showTrack'> 
+            </label>
+        </div>
+ 
+        <div id='curve-container'>
+            <bezier-viewer v-for='(obj,index) in dotsSet' v-if='obj.show == true'
+                :dots = 'obj.dots'
+                :title = 'obj.title'
+            >
+            </bezier-viewer>   
+            <button v-show='curveEditorNumber < dotsSet.length ' id='add-btn' @click='addCurveEditor()'>+</button>
+        </div>
+  
     </main>
 
 </body>
-<style>
-svg{
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    overflow: visible;
-}
-path{
-    stroke-width:1px;
-    fill:transparent;
-}
-.dot-circle{
-    cursor: grab;
-}
-circle{
-    fill: gray;
-}
-.dot-path{
-    stroke:gray;
-}
-.curve-path{
-    stroke: red;
-}
-.dot-g{
-    cursor: grab;
-}
-.ball-container{
-    display: flex;
-    justify-content: center;
-    height: 20px;
-    align-items: center;
-    width: 500px;
-    margin: 0px auto;
-    margin-bottom: 10px;
-    position: relative;
-    flex-wrap: wrap;
-}
-.ball-move-bg{
-    height: 2px;
-    background: #ccc;
-    width: 100%;
-}
-.ball{
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background: red;
-    left: 0px;
-    top: 0px;
-    border-radius: 100%;
-}
-input{
-    width: 4em;
-    box-shadow: none;
-    border: 1px solid #ccc;
-}
-input:focus{
-    outline: none;
-    border-color: #00BCD4;
-}
-li{
-    padding-top: 10px;
-    padding-bottom: 10px;
-}
-</style>
 
 <script type="text/x-template" id='bezier-curve-template'>
 
-    <div style='display:inline-flex;justify-content:center;align-items:flex-start'>
+    <div  class='curve-editor'>
         <svg :width=' boxWidth + "px" ' :height=' boxWidth + "px" ' :viewBox=" '0 0 ' + boxWidth + ' ' + boxWidth ">
             <text x='6px' y='20px'>{{title}}</text>
             <!-- 连接dots的path -->
             <path class='dot-path' :d="linePath" ></path>
             <path class='curve-path' :d="curvePath"></path>
-            <circle :transform="new Matrix(1,0,0,1,startX,startY).toString()" r='5'  class='dot-circle index-circle'  style='fill:red'></circle>
-            <circle :transform="new Matrix(1,0,0,1,endX,endY).toString()" r='5'  class='dot-circle index-circle'  style='fill:red'></circle>
+            <g :transform="new Matrix(1,0,0,1,startX,startY).toString()">
+                <circle  r='5'  class='dot-circle index-circle'  style='fill:red'></circle>
+                <text  x='5px' y='10px'>[{{startX + ',' + startY}}]</text>
+            </g>
+            <g :transform="new Matrix(1,0,0,1,endX,endY).toString()" >
+                <circle  r='5'  class='dot-circle index-circle'  style='fill:red'></circle>
+                <text  x='5px' y='10px'>[{{endX + ',' + endY}}]</text>
+            </g>
+
             <g  v-for='(dot,index) in dots' :transform="new Matrix(1,0,0,1,dot.x,dot.y).toString()" :data-index="index"  class='dot-g'>
                 <circle r='5' class='dot-circle'></circle>
                 <path class='dot-line'></path>
+                <text  x='5px' y='10px'>[{{dot.x + ',' + dot.y}}]</text>
             </g>
         </svg>
         <div style='margin:0px 10px;display:flex;justify-content:center;align-items:flex-start;flex-wrap:wrap;padding:10px'>

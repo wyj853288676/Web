@@ -121,6 +121,7 @@ function initPint(){
                 let arr = this.dots.map(function(v){
                     return v.x + ',' + v.y;
                 });
+                arr.push([this.endX,this.endY]);
                 if(arr.length > 0){
                     path = "M" + [this.startX,this.startY].join(',') + " L" + arr.join(' ');
                 }else{
@@ -209,27 +210,44 @@ function initPint(){
         },
     });
     let data = {
+        //是否显示轨迹
+        showTrack:true,
         dotsSet:[
             {   
                 dots:[],
+                show:true,
                 title:'X方向',
                 options:{},
             },
             {
                 dots:[],
+                show:false,
                 title:'Y方向',
+                options:{},
+            },
+            {
+                dots:[],
+                show:false,
+                title:'Z方向',
                 options:{},
             },
         ],
     };
 
-    let methods = {
-    };
 
     window.mainApp = new Vue({
         el:'main',
         data:data,
         methods:{
+            //添加一个贝塞尔曲线editor
+            addCurveEditor:function(){
+                for(var i in this.dotsSet){
+                    if(!this.dotsSet[i].show){
+                        this.dotsSet[i].show = true;
+                        break;
+                    }
+                }
+            },
             //绘制动画
             drawAnimation:function(){
                 if(this.rafCount == undefined){
@@ -238,48 +256,82 @@ function initPint(){
                     this.rafCount ++ ;
                 };
                 let frame = 60 , indexFrame = 0 , rafCount = this.rafCount , 
-                    _ball = this.$el.querySelector('.ball') ;
+                    _ball = this.$el.querySelector('.ball') ,
+                    //显示box-shadow的dom
+                    _ballShadow = $(this.$el.querySelector('.ball-shadow'));
                 let components = this.$children;
                 let proportions = [];
                 let offsets = [
                     //translateX 最大为clientWidth
                     this.$el.querySelector('.ball-container').clientWidth, 
-                    // translateY 最大为50
-                    50,                                                    
+                    // translateY 最大值
+                    50, 
+                    // translateZ 最大值        
+                    100,                                           
                 ];
                 components.forEach(function(v , index){
                     let proportion = (v.endY - v.startY) == 0 ? 1 : offsets[index] / (v.endY - v.startY);
                     // let proportion = 1;
                     proportions.push( proportion );
                 });
-                let matrix = new Matrix(_ball.style.transform) ;
+                //复位
+                _ball.style.transform = '';
+                let transformStyle = document.defaultView.getComputedStyle(_ball).transform;
+                let matrix ;
+                if(transformStyle.indexOf('3d') < 0 && transformStyle != ''){
+                    //2d矩阵转换成3d
+                    let matrix2d = new Matrix(transformStyle);
+                    matrix = matrix2d.transfer3d();
+                }else{
+                    matrix = new Matrix3d(transformStyle);
+                }
+                //通过box-shadow 来显示每一帧的轨迹
+                let shadows = [] , color = 'rgba(255,0,0,0.1)' , showTrack = this.showTrack;
+
                 draw.call(this);
 
                 function draw(){
-                    let transformMatrix = Matrix.prototype.clone(matrix);
+                    let transformMatrix = Matrix3d.prototype.clone(matrix);
+                    let shadow = ['0px' , '0px' , '0px' ];
                     proportions.forEach(function(v,index){
+                        let newMatrix = new Matrix3d();
                         let bezier = components[index].bezier;
                         let dot = bezier.getDot(bezier.start.x + (bezier.end.x - bezier.start.x) * indexFrame / frame);
                         let offset = (dot.y - components[index].startY) * v;
                         switch(index){
                             case 0 : // translate X 
-                                transformMatrix.e = offset;
-                                // transformMatrix = transformMatrix.multi(new Matrix(1,0,0,1,offset,0));
+                                newMatrix[0][3] = offset;
                                 break;
                             case 1 : // translate Y
-                                transformMatrix.f = offset;
-                                // transformMatrix = transformMatrix.multi(new Matrix(1,0,0,1,0,offset));
+                                newMatrix[1][3] = offset;
+                                break;
+                            case 2 : // translate Z
+                                newMatrix[2][3] = offset;
                                 break;
                         };
+                        if(index < 2){
+                            shadow[index] = offset + 'px' ;
+                        }
+                        transformMatrix = transformMatrix.multi(newMatrix);
                     });
+                    shadow = shadow.join(' ') + " " +  color;
+                    shadows.push(shadow);
+                    //设置box-shadow
+                    if(showTrack){
+                        _ballShadow.css('box-shadow' , shadows.join(',') );
+                    }
+                    //设置transform
                     _ball.style.transform = transformMatrix;
+
                     if(rafCount <= window.mainApp.rafCount){
                         if(indexFrame < frame){
                             indexFrame ++ ;
                             requestAnimationFrame(draw);
                             return;
+                        }else{
                         }
                     }
+
                 }
 
             },
@@ -292,6 +344,18 @@ function initPint(){
         mounted:function(){
 
         },
+        computed:{
+            curveEditorNumber:function(){
+                let number = this.dotsSet.filter(function(v){return v.show;}).length;
+                if(number >= 3){
+                    //显示为3d
+                    $(this.$el.querySelector('.ball-container')).addClass('transform-3d')
+                }else{
+                    $(this.$el.querySelector('.ball-container')).removeClass('transform-3d')
+                }
+                return number;
+            }
+        }
     });
 
 }
@@ -390,217 +454,3 @@ function initPint(){
 
 
 
-
-
-/**
- * 批量设置DOM属性
- * abcDef 会被拆开为 abc-def;
- */
-function setAttrs(dom,obj){
-    for(var i in obj){
-        let attr = (i + '').split('').map(function(v){
-            return v.toLowerCase() == v ? v : ('-' + v.toLowerCase());
-        }).join('');
-        dom.setAttribute(attr,obj[i]);
-    };
-    return dom;
-}
-
-/**
- * 创建一个svg元素节点
- */
-function createSvgEl(name){
-    return document.createElementNS("http://www.w3.org/2000/svg",name);
-};
-
-
-
-
-
-//自定义transform Matrix 类
-/**
- *  a  c  e  
- *  b  d  f
- *  0  0  1
- */
-(function(w){
-    if(w.isArray == undefined){
-        w.isArray = function(a){
-            return Object.prototype.toString.call(a) == '[object Array]';
-        }
-    }
-    w.Matrix=function(a,b,c,d,e,f){
-        let params;
-        if(arguments.length===0||arguments[0]==='none'||arguments[0]===''){
-            return new Matrix(1,0,0,1,0,0);
-        }else if(isArray(a)){
-            params=a;
-        }else if(typeof a === 'string'){
-            a=a.replace(/[^\d,.-]/g,'');
-            params=a.split(',');
-            for(var i in params){
-                params[i]=parseFloat(params[i]);
-            }
-        }else{
-            params=[a,b,c,d,e,f];
-        }
-        if(this==window){
-            return "matrix("+params.join(',')+")";
-        }
-        this.a=params[0];
-        this.b=params[1];
-        this.c=params[2];
-        this.d=params[3];
-        this.e=params[4];
-        this.f=params[5];
-        return this;
-    };
-    Matrix.prototype={
-        clone:function(obj){
-            if(this instanceof Matrix){
-                Object.keys(this).forEach(function(v){
-                    this[v] = obj[a];
-                },this);
-                return this;
-            }
-            return new Matrix(obj.a,obj.b,obj.c,obj.d,obj.e,obj.f);
-        },
-        multi:function(m){
-            if(! (m instanceof Matrix) ){
-                return false;
-            }
-            let arr=[
-                this.a*m.a+this.c*m.b,
-                this.b*m.a+this.d*m.b,
-                this.a*m.c+this.c*m.d,
-                this.b*m.c+this.d*m.d,
-                this.a*m.e+this.c*m.f+this.e,
-                this.b*m.e+this.d*m.f+this.f,
-            ];
-            return  new Matrix(arr);
-        },
-        add:function(m){
-            if(! (m instanceof Matrix) ){
-                return false;
-            }
-            return new Matrix([
-                this.a+m.a,
-                this.b+m.b,
-                this.c+m.c,
-                this.d+m.d,
-                this.e+m.e,
-                this.f+m.f,
-            ]);
-        },
-        sub:function(m){
-            if(! (m instanceof Matrix) ){
-                return false;
-            }
-            return new Matrix([
-                this.a-m.a,
-                this.b-m.b,
-                this.c-m.c,
-                this.d-m.d,
-                this.e-m.e,
-                this.f-m.f,
-            ]);
-        },
-        toString:function(){
-            let params=[this.a,this.b,this.c,this.d,this.e,this.f];
-            return "matrix("+params.join(',')+")";
-        }
-    }
-
-  
-
-})(window);
-
-
-/**
- * myDrag
- * 
- */
-
- (function(){
-    $.fn.myDrag=function(inOptions){
-        let options={
-            start:function(e){return true},
-            move:function(e){},
-            end:function(e){},
-            moveTarget:undefined,
-            delegateTarget:'',//事件代理 设置的时侯this是用来代理事件的
-        };
-        options=$.extend(options,inOptions);
-        _document=$(document);
-        this.each(function(){
-            let _this=$(this);
-            let mousedownDrag=false;
-            let indexX=0,indexY=0;
-            let _moveTarget=options['moveTarget']==undefined?_this:options['moveTarget'];
-            bindListen();
-            function bindListen(){
-                _document.on('mouseup touchend',mouseupHandler);
-                if(options['delegateTarget']==''){
-                    _moveTarget[0].addEventListener('mousemove',mousemoveHandler);
-                    _moveTarget[0].addEventListener('touchmove',mousemoveHandler);
-                    // _moveTarget[0].addEventListener('mouseout',mouseupHandler)
-                    _this[0].addEventListener('mousedown',mousedownHandler);
-                    _this[0].addEventListener('touchstart',mousedownHandler);
-                }else{
-                    _this.delegate(options['delegateTarget'],'mousemove',mousemoveHandler);
-                    _this.delegate(options['delegateTarget'],'touchmove',mousemoveHandler);
-                    _this.delegate(options['delegateTarget'],'mousedown',mousedownHandler);
-                    _this.delegate(options['delegateTarget'],'touchstart',mousedownHandler);
-                }
-    
-    
-                function mousedownHandler(e){
-                    processEvent(e);
-                    if( options['start'].call(_this[0],e)==false){
-                        return true;    
-                    }
-                    mousedownDrag=true;
-                    indexX=e.pageX;
-                    indexY=e.pageY;
-                }
-                function mouseupHandler(e){
-                    if(mousedownDrag==false){
-                        return true;
-                    }
-                    //mouseout 到 moveTarget 外部
-                    if(e.type == 'mouseout' && _moveTarget[0] != e.relatedTarget && _moveTarget[0].contains(e.relatedTarget) ){
-                        return true;
-                    }
-                    //冒泡事件
-                    processEvent(e);
-                    options['end'].call(_this[0],e);
-                    mousedownDrag=false;
-                }
-                function mousemoveHandler(e){
-                    if(mousedownDrag==false){
-                        return true;
-                    }
-                    processEvent(e);
-                    e.myDragX=e.pageX-indexX;
-                    e.myDragY=e.pageY-indexY;
-                    options['move'].call(_this[0],e);
-                    indexX=e.pageX;
-                    indexY=e.pageY;
-                }
-            }
-        });
-    }
-
-    //处理mobile 事件 将移动端event.targetTouches[0].pageX Y 给 jquery event.pageX Y
-    function processEvent(e){
-        //非touch事件
-        if(typeof TouchEvent!='function' || ! ( e instanceof TouchEvent ) ){
-            return e;
-        }
-        let _touch = e.targetTouches[0]?e.targetTouches[0]:e.changedTouches[0];
-        e.pageX=_touch.pageX;
-        e.pageY=_touch.pageY;
-        return e;
-    };
-
- })(window);
