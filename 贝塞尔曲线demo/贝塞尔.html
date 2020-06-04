@@ -41,17 +41,17 @@ body{
  
         <div id='curve-container'>
             <div style='position: relative;'  v-for='(obj,index) in dotsSet' v-if='obj.show == true'>
+                <button  v-show=' curveEditorNumber == (index + 1)' class='circle-button close-button' style='font-size:16px;' @click='dotsSet[index].show = false'>
+                    ×
+                </button>
                 <bezier-viewer
                     :dots = 'obj.dots'
                     :title = 'obj.title'
                     :options = 'obj.options ? obj.options : {}'
                 >
                 </bezier-viewer>   
-                <button  v-show=' curveEditorNumber == (index + 1)' class='circle-button close-button' style='font-size:16px;z-index:-1' @click='dotsSet[index].show = false'>
-                    ×
-                </button>
             </div>
-         
+            
             <button v-show='curveEditorNumber < dotsSet.length ' id='add-btn' @click='addCurveEditor()'>+</button>
         </div>
   
@@ -61,7 +61,7 @@ body{
 
 <script type="text/x-template" id='bezier-curve-template'>
 
-    <div  class='curve-editor'>
+    <div  class='curve-editor' style='z-index:1;margin:0px 10px;'>
         <svg :width=' boxWidth + "px" ' :height=' boxWidth + "px" ' :viewBox=" '0 0 ' + boxWidth + ' ' + boxWidth ">
             <text x='6px' y='20px'>{{title}}</text>
             <!-- 连接起点终点的path -->
@@ -86,7 +86,7 @@ body{
                 <text  x='5px' y='10px'>[{{dot.x + ',' + dot.y}}]</text>
             </g>
         </svg>
-        <div style='margin:0px 10px;display:flex;justify-content:center;align-items:flex-start;flex-wrap:wrap;padding:10px'>
+        <div style='display:flex;justify-content:center;align-items:flex-start;flex-wrap:wrap;padding:10px'>
             <button @click='addDot()' style='width:70%'>添加一个控制点</button>
             <ul style='width:100%;cursor:default'>
                 <li>

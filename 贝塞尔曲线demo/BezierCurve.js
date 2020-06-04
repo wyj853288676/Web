@@ -200,8 +200,10 @@ function initPint(){
                 show:false,
                 title:'Y方向',
                 options:{
-                    startY:200,
-                    endY:200,
+                    startX:50,
+                    endX:250,
+                    startY:150,
+                    endY:150,
                 },
             },
             {
@@ -209,10 +211,10 @@ function initPint(){
                 show:false,
                 title:'Z方向',
                 options:{
-                    // startX:0,
-                    // endX:300,
-                    startY:200,
-                    endY:200,
+                    startX:50,
+                    endX:250,
+                    startY:150,
+                    endY:150,
                 },
             },
         ],
