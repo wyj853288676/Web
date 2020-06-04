@@ -35,7 +35,7 @@ body{
         <div style='margin-bottom:20px;display: flex;justify-content: center;align-items: center;'>
             <button @click='drawAnimation()'>绘制</button>
             <label for="show-track" style="margin:0px 5px">
-                显示轨迹<input type="checkbox" id='show-track' v-model='showTrack'> 
+                显示轨迹<input type="checkbox" id='show-track' v-model.number='showTrack'> 
             </label>
         </div>
  
@@ -44,9 +44,10 @@ body{
                 <bezier-viewer
                     :dots = 'obj.dots'
                     :title = 'obj.title'
+                    :options = 'obj.options ? obj.options : {}'
                 >
                 </bezier-viewer>   
-                <button v-show=' curveEditorNumber == (index + 1)' class='circle-button close-button' style='font-size:16px' @click='dotsSet[index].show = false'>
+                <button  v-show=' curveEditorNumber == (index + 1)' class='circle-button close-button' style='font-size:16px;z-index:-1' @click='dotsSet[index].show = false'>
                     ×
                 </button>
             </div>
@@ -63,10 +64,14 @@ body{
     <div  class='curve-editor'>
         <svg :width=' boxWidth + "px" ' :height=' boxWidth + "px" ' :viewBox=" '0 0 ' + boxWidth + ' ' + boxWidth ">
             <text x='6px' y='20px'>{{title}}</text>
+            <!-- 连接起点终点的path -->
+            <path stroke='#0075ff' stroke-opacity='0.5' :d="startEndPath" stroke-dasharray='5' stroke-dashoffset='5' ></path>
             <!-- 连接dots的path -->
             <path class='dot-path' :d="linePath" ></path>
             <path class='curve-path' :d="curvePath"></path>
             <g :transform="new Matrix(1,0,0,1,startX,startY).toString()">
+                <!-- 箭头指示 -->
+                <polygon fill='#0075ff' points='0 5,0 -5,15 0' :transform='angleRotateMatrix'></polygon>
                 <circle  r='5'  class='dot-circle index-circle'  style='fill:red'></circle>
                 <text  x='5px' y='10px'>[{{startX + ',' + startY}}]</text>
             </g>
@@ -86,20 +91,20 @@ body{
             <ul style='width:100%;cursor:default'>
                 <li>
                     起点 : 
-                    <input type="number" :value='startX' @blur='changeIndexCircle($event,0)' @keyup.enter='changeIndexCircle($event,0)'> 
+                    <input type="number" v-model.number='startX'> 
                     , 
-                    <input type="number" :value='startY' @blur='changeIndexCircle($event,1)' @keyup.enter='changeIndexCircle($event,1)'>
+                    <input type="number" v-model.number='startY'>
                 </li>
                 <li>
                     终点 : 
-                    <input type="number" :value='endX' @blur='changeIndexCircle($event,2)' @keyup.enter='changeIndexCircle($event,2)'> 
+                    <input type="number" v-model.number='endX' > 
                     , 
-                    <input type="number" :value='endY' @blur='changeIndexCircle($event,3)' @keyup.enter='changeIndexCircle($event,3)'>
+                    <input type="number" v-model.number='endY' >
                 </li>
                 <li v-for='(dot,index) in dots'>
                     {{index}} : 
-                    <input type="number" v-model.number='dot.x'> 
-                    <input type="number" v-model.number='dot.y'>
+                    <input type="number" v-model.number.number='dot.x'> 
+                    <input type="number" v-model.number.number='dot.y'>
                      <!-- {{dot.x}} , {{dot.y}} -->
                     <button @click='deleteDot(index)'>×</button>
                 </li>

@@ -2,17 +2,20 @@ function initPint(){
     Vue.prototype.Matrix = window.Matrix;
 
     window.BezierViewer = Vue.component('BezierViewer',{
-        data:function(){
-            return {
+        data:function(obj){
+            let data = {
                 boxWidth:300,
                 width:100,
-                offsetStartX : 0,
-                offsetEndX : 0,
-                offsetStartY : 0,
-                offsetEndY : 0,
             };
+            let options = Object.assign({} , obj.options);
+            //起点 ， 终点坐标
+            data.startX = options.startX!=undefined ? options.startX : (data.boxWidth - data.width) / 2;
+            data.startY = options.startY!=undefined ? options.startY : (data.boxWidth - data.width) / 2 + data.width;
+            data.endX = options.endX!=undefined ? options.endX : data.startY;
+            data.endY = options.endY!=undefined ? options.endY : data.startX;
+            return data;
         },
-        props:['dots','title'],
+        props:['dots','title','options'],
         watch:{
             dots:function(){
                 this.$nextTick(function(){
@@ -27,33 +30,20 @@ function initPint(){
             });
         },
         computed:{
-            indexStartX:function(){
-                return (this.boxWidth - this.width) / 2;
-            },
-            indexStartY:function(){
-                return (this.boxWidth - this.width) / 2 + this.width;
-            },
-            indexEndX:function(){
-                return (this.boxWidth - this.width) / 2 + this.width;
-            },
-            indexEndY:function(){
-                return  (this.boxWidth - this.width) / 2 ;
-            },
-            //开始坐标x
-            startX:function(){
-                return this.indexStartX + this.offsetStartX;
-            },
-            //开始坐标y
-            startY:function(){
-                return this.indexStartY + this.offsetStartY;
-            },
-            //终点坐标x
-            endX:function(){
-                return this.indexEndX + this.offsetEndX;
-            },
-            //终点坐标y
-            endY:function(){
-                return this.indexEndY + this.offsetEndY;
+            //箭头旋转的角度
+            angleRotateMatrix:function(){
+                let distanceX = this.endX - this.startX,
+                    distanceY = this.endY - this.startY;
+                let distance = Math.pow(distanceX , 2) + Math.pow(distanceY , 2);
+                distance = Math.pow(distance , 0.5);
+                if(distance == 0){
+                    return new Matrix(0,0,0,0,0,0);
+                }else{
+                    let cos = distanceX / distance , sin = -distanceY / distance;
+                    return new Matrix([
+                        cos,-sin,sin,cos,0,0
+                    ]).toString();
+                }
             },
             //当前的bezier对象
             bezier:function(){
@@ -102,12 +92,12 @@ function initPint(){
                     //     break;
                     default:
                         //分成一千份计算path
-                        let segNum = 1000 , dots = [];
-                        for(var i = 1;i <= segNum;i++){
+                        let segNum = 1000, dots = [] ;
+                        for(var i = 1;i <= segNum ;i++){
                             let index = this.startX + (this.endX - this.startX) * i / segNum ;
                             let dot = this.bezier.getDot(index);
                             if(isNaN(dot.x) || isNaN(dot.y)){
-                                console.log(this.bezier,this.dots)
+                                console.log(this.bezier,this.dots,index);
                             }
                             dots.push( dot.x + ',' + dot.y);
                         };
@@ -129,17 +119,12 @@ function initPint(){
                 }
                 return path;
             },
+            //将起点终点连接
+            startEndPath:function(){
+                return "M" + [this.startX,this.startY].join(',') + " L" +  [this.endX,this.endY].join(' ');
+            },
         },
         methods:{
-            changeIndexCircle:function($event,type){
-                let value = $event.target.value;
-                if(value == ''){
-                    return; 
-                };
-                let startOrEnd = type <= 1 ? 'Start' : "End" , 
-                    XOrY = type%2 == 0 ? 'X' : 'Y';
-                this['offset' + startOrEnd + XOrY] = value -  this['index' + startOrEnd + XOrY] ;
-            },
             //给每个控制点 、 开始结束点 绑定监听
             bindListen:function(){
                 let _this = this;
@@ -174,21 +159,11 @@ function initPint(){
                                 _this.dots[index].y = Math.min( _this.boxWidth , Math.max(0,y));
                             }else{
                                 if(index == 0){
-                                    //起点
-                                    _this.offsetStartX = Math.max( -_this.indexStartX , 
-                                        Math.min(_this.boxWidth - _this.indexStartX , _this.offsetStartX + e.myDragX ) 
-                                    );
-                                    _this.offsetStartY = Math.max( -_this.indexStartY , 
-                                        Math.min(_this.boxWidth - _this.indexStartY , _this.offsetStartY + e.myDragY ) 
-                                    ); 
+                                    _this.startX = Math.max(0,Math.min(_this.boxWidth,_this.startX + e.myDragX));
+                                    _this.startY = Math.max(0,Math.min(_this.boxWidth,_this.startY + e.myDragY));
                                 }else{
-                                    //终点
-                                    _this.offsetEndX = Math.max( -_this.indexEndX , 
-                                        Math.min(_this.boxWidth - _this.indexEndX , _this.offsetEndX + e.myDragX ) 
-                                    );
-                                    _this.offsetEndY = Math.max( -_this.indexEndY , 
-                                        Math.min(_this.boxWidth - _this.indexEndY , _this.offsetEndY + e.myDragY ) 
-                                    ); 
+                                    _this.endX = Math.max(0,Math.min(_this.boxWidth,_this.endX + e.myDragX));
+                                    _this.endY = Math.max(0,Math.min(_this.boxWidth,_this.endY + e.myDragY));
                                 };
                             }
               
@@ -225,14 +200,20 @@ function initPint(){
                 show:false,
                 title:'Y方向',
                 options:{
-
+                    startY:200,
+                    endY:200,
                 },
             },
             {
                 dots:[],
                 show:false,
                 title:'Z方向',
-                options:{},
+                options:{
+                    // startX:0,
+                    // endX:300,
+                    startY:200,
+                    endY:200,
+                },
             },
         ],
     };
@@ -399,7 +380,15 @@ function initPint(){
 
     Object.assign(BezierCurve.prototype,{
         getDot:function(index){
-            index = Math.max(this.start.x,Math.min(this.end.x,index));
+            let max , min ;
+            if(this.start.x > this.end.x){
+                max = this.start.x;
+                min = this.end.x;
+            }else{
+                max = this.end.x;
+                min = this.start.x;
+            }
+            index = Math.max(min,Math.min(max,index));
             let proportion = (index - this.start.x) / (this.end.x - this.start.x);
             let indexX = index;
             let indexY = this.start.y + proportion * (this.end.y - this.start.y);
