@@ -136,7 +136,7 @@ button:active{
     transform: perspective(500px) ;;
 }
 .ball-container .ball{
-    transform: perspective(500px)  ;;
+    /* transform: perspective(500px)  ;; */
 }
 .ball-container.transform-3d::before{
     opacity: 1;

@@ -95,10 +95,10 @@ function createSvgEl(name){
          */
         transfer3d:function(){
             return new Matrix3d([
-                [this.a , this.c , 0 , this.e],
-                [this.b , this.d , 0 , this.f],
-                [0 , 0 , 1 , 0],
-                [0 , 0 , 1 , 0],
+                this.a,this.b,0,0,
+                this.c,this.d,0,0,
+                0,0,1,0,
+                this.e,this.f,0,1,
             ]);
         },
         add:function(m){
@@ -293,6 +293,7 @@ function createSvgEl(name){
                     arr[j][i] = this[i][j];
                 }
             };
+            console.log(arr);
             return 'matrix3d('+arr.map(function(v){return v.join(',');}).join(',') + ")";
         }
     });    

@@ -275,7 +275,7 @@ function initPint(){
                 let shadows = [] , color = 'rgba(255,0,0,0.1)' , showTrack = this.showTrack;
 
                 draw.call(this);
-
+                console.log(matrix);
                 function draw(){
                     let transformMatrix = Matrix3d.prototype.clone(matrix);
                     let shadow = ['0px' , '0px' , '0px' ];
