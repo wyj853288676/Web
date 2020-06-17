@@ -293,7 +293,6 @@ function createSvgEl(name){
                     arr[j][i] = this[i][j];
                 }
             };
-            console.log(arr);
             return 'matrix3d('+arr.map(function(v){return v.join(',');}).join(',') + ")";
         }
     });    

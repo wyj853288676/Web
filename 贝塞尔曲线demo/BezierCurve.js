@@ -251,7 +251,7 @@ function initPint(){
                     //translateX 最大为clientWidth
                     this.$el.querySelector('.ball-container').clientWidth, 
                     // translateY 最大值
-                    50, 
+                    300, 
                     // translateZ 最大值        
                     100,                                           
                 ];
@@ -275,7 +275,6 @@ function initPint(){
                 let shadows = [] , color = 'rgba(255,0,0,0.1)' , showTrack = this.showTrack;
 
                 draw.call(this);
-                console.log(matrix);
                 function draw(){
                     let transformMatrix = Matrix3d.prototype.clone(matrix);
                     let shadow = ['0px' , '0px' , '0px' ];
@@ -289,6 +288,7 @@ function initPint(){
                                 newMatrix[0][3] = offset;
                                 break;
                             case 1 : // translate Y
+                                console.log( indexFrame , offset , dot , bezier.start.x + (bezier.end.x - bezier.start.x) * indexFrame / frame);
                                 newMatrix[1][3] = offset;
                                 break;
                             case 2 : // translate Z
